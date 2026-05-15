@@ -1,7 +1,6 @@
 import { authorize } from "@/lib/auth";
 import { runFullPipeline } from "@/lib/pipeline";
 import { NextRequest, NextResponse } from "next/server";
-import type { Conviction, RunType } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -12,22 +11,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: auth.reason }, { status: 401 });
   }
 
-  const runType = (req.nextUrl.searchParams.get("run_type") ?? "morning_brief") as RunType;
-  const postMin = (req.nextUrl.searchParams.get("post_min") ?? "high") as Conviction;
-
   const result = await runFullPipeline({
-    runType,
-    minConvictionToPost: postMin,
+    runType: "morning_brief",
+    minConvictionToPost: "high",
   });
 
   return NextResponse.json(
     {
       ok: result.ok,
       run_id: result.runId,
-      flagged: result.flagged,
-      recommendations: result.recommendations,
-      skipped: result.skipped,
-      discord: result.discord,
+      generated: result.recommendations.length,
+      posted: result.discord?.ok ? (result.discord as { posted: number }).posted : 0,
       cost_cents: result.costCents,
       duration_ms: result.durationMs,
       ...(result.error ? { error: result.error } : {}),
