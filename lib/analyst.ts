@@ -77,13 +77,7 @@ Do your research and return a JSON recommendation.`;
   const response = await anthropic.messages.create({
     model: MODELS.ANALYST,
     max_tokens: 3072,
-    system: [
-      {
-        type: "text",
-        text: ANALYST_SYSTEM,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
+    system: ANALYST_SYSTEM,
     tools: [
       {
         type: "web_search_20250305",
