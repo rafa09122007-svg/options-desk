@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: theme("colors.ink.DEFAULT");
+    color: theme("colors.paper.DEFAULT");
+    font-feature-settings: "ss01", "cv01", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Subtle film grain — adds warmth, prevents the flat-dark feel */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Subtle horizontal rule style — for editorial section dividers */
+  hr {
+    border: 0;
+    border-top: 1px solid theme("colors.edge.DEFAULT");
+  }
+
+  /* Tabular numbers for any element with .tnum */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-sm border border-edge bg-ink-card;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .chip-bull {
+    @apply border-bull/30 bg-bull-glow text-bull;
+  }
+
+  .chip-bear {
+    @apply border-bear/30 bg-bear-glow text-bear;
+  }
+
+  .chip-gold {
+    @apply border-gold/40 bg-gold-glow text-gold;
+  }
+
+  .chip-neutral {
+    @apply border-edge bg-ink-elevated text-paper-muted;
+  }
+}
