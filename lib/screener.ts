@@ -71,13 +71,7 @@ Screen the watchlist and return flagged tickers as JSON.`;
   const response = await anthropic.messages.create({
     model: MODELS.SCREENER,
     max_tokens: 2048,
-    system: [
-      {
-        type: "text",
-        text: SCREENER_SYSTEM,
-        cache_control: { type: "ephemeral" }, // cache system prompt
-      },
-    ],
+    system: SCREENER_SYSTEM,
     tools: [
       {
         type: "web_search_20250305",
