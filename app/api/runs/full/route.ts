@@ -1,6 +1,7 @@
 import { authorize } from "@/lib/auth";
 import { runScreener } from "@/lib/screener";
 import { runAnalyst } from "@/lib/analyst";
+import { postRecsToDiscord } from "@/lib/discord";
 import { supabaseAdmin } from "@/lib/supabase";
 import { NextRequest, NextResponse } from "next/server";
 import type { RunType } from "@/lib/types";
@@ -93,12 +94,24 @@ export async function GET(req: NextRequest) {
       })
       .eq("id", run.id);
 
+    // 4) POST TO DISCORD — only high+ conviction by default
+    const minConv = (req.nextUrl.searchParams.get("post_min") ?? "high");
+    const CONV_RANK: Record<string, number> = {
+      low: 0, medium: 1, high: 2, best_idea: 3,
+    };
+    const minRank = CONV_RANK[minConv] ?? 2;
+    const toPost = recommendations.filter(
+      (r) => CONV_RANK[r.conviction] >= minRank
+    );
+    const discord = await postRecsToDiscord(toPost);
+
     return NextResponse.json({
       ok: true,
       run_id: run.id,
       flagged: screened.flagged,
       recommendations,
       skipped,
+      discord,
       cost_cents: totalCostCents,
       duration_ms: Date.now() - startedAt,
     });
