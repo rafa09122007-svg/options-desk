@@ -1,5 +1,6 @@
 import { anthropic, MODELS } from "./anthropic";
 import { calcCostCents } from "./cost";
+import { extractJson } from "./json";
 import { supabaseAdmin } from "./supabase";
 
 export type ScreenerFlag = {
@@ -91,15 +92,10 @@ Screen the watchlist and return flagged tickers as JSON.`;
   const rawOutput = textBlocks[textBlocks.length - 1]?.text ?? "";
 
   // Strip code fences if model wrapped output
-  const cleaned = rawOutput.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-
-  let flagged: ScreenerFlag[] = [];
-  try {
-    const parsed = JSON.parse(cleaned);
-    flagged = Array.isArray(parsed?.flagged) ? parsed.flagged : [];
-  } catch {
-    // Log but don't throw — caller will see empty results + raw output in log
-    console.error("Screener JSON parse failed:", cleaned.slice(0, 500));
+  const parsed = extractJson<{ flagged?: ScreenerFlag[] }>(rawOutput);
+  const flagged: ScreenerFlag[] = Array.isArray(parsed?.flagged) ? parsed!.flagged : [];
+  if (!parsed) {
+    console.error("Screener JSON parse failed. Raw:", rawOutput.slice(0, 500));
   }
 
   const costCents = calcCostCents(MODELS.SCREENER, response.usage);
