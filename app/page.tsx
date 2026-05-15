@@ -4,7 +4,7 @@ import type { Recommendation, Watchlist } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [{ data: watchlist, error: wlError }, { data: recs }] =
+  const [{ data: watchlist, error: wlError }, { data: recs }, { data: lastRun }] =
     await Promise.all([
       supabaseAdmin
         .from("watchlist")
@@ -18,6 +18,12 @@ export default async function Home() {
         .order("created_at", { ascending: false })
         .limit(10)
         .returns<Recommendation[]>(),
+      supabaseAdmin
+        .from("daily_runs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
   const today = new Date().toLocaleDateString("en-US", {
@@ -46,6 +52,23 @@ export default async function Home() {
           <p className="mt-4 max-w-xl font-display text-lg italic text-paper-muted">
             An analyst that reads the tape so you don&apos;t have to.
           </p>
+          {lastRun && (
+            <p className="mt-6 text-xs text-paper-faint">
+              Last run:{" "}
+              <span className="text-paper-muted">
+                {lastRun.run_type.replaceAll("_", " ")}
+              </span>{" "}
+              ·{" "}
+              <span className="tnum text-paper-muted">
+                {new Date(lastRun.created_at).toLocaleString()}
+              </span>{" "}
+              · {lastRun.recommendations_generated} ideas ·{" "}
+              <span className="tnum text-paper-muted">
+                ${(lastRun.total_cost_cents / 100).toFixed(2)}
+              </span>{" "}
+              spent
+            </p>
+          )}
         </header>
 
         {wlError && (
