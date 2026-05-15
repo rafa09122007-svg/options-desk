@@ -1,5 +1,6 @@
 import { anthropic, MODELS } from "./anthropic";
 import { calcCostCents } from "./cost";
+import { extractJson } from "./json";
 import { supabaseAdmin } from "./supabase";
 import type { Conviction, Direction, Recommendation } from "./types";
 
@@ -76,7 +77,7 @@ Do your research and return a JSON recommendation.`;
 
   const response = await anthropic.messages.create({
     model: MODELS.ANALYST,
-    max_tokens: 3072,
+    max_tokens: 4096,
     system: ANALYST_SYSTEM,
     tools: [
       {
@@ -93,7 +94,6 @@ Do your research and return a JSON recommendation.`;
     text: string;
   }>;
   const rawOutput = textBlocks[textBlocks.length - 1]?.text ?? "";
-  const cleaned = rawOutput.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
 
   const costCents = calcCostCents(MODELS.ANALYST, response.usage);
 
@@ -108,11 +108,13 @@ Do your research and return a JSON recommendation.`;
     raw_output: rawOutput,
   });
 
-  let parsed: Record<string, unknown>;
-  try {
-    parsed = JSON.parse(cleaned);
-  } catch {
-    return { kind: "no_trade", reason: "Analyst returned unparseable output", costCents };
+  const parsed = extractJson<Record<string, unknown>>(rawOutput);
+  if (!parsed) {
+    return {
+      kind: "no_trade",
+      reason: `Analyst returned unparseable output. First 400 chars: ${rawOutput.slice(0, 400)}`,
+      costCents,
+    };
   }
 
   if (parsed.no_trade === true) {
