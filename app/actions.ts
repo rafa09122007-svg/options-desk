@@ -9,9 +9,9 @@ import { supabaseAdmin } from "@/lib/supabase";
 // Outcomes — "took it" / "passed" / "closed"
 // ============================================================
 
-export async function logOutcome(formData: FormData) {
+export async function logOutcome(formData: FormData): Promise<void> {
   const recId = Number(formData.get("rec_id"));
-  const action = String(formData.get("action")); // 'took' | 'passed' | 'close'
+  const action = String(formData.get("action"));
   const exitPrice = formData.get("exit_price")
     ? Number(formData.get("exit_price"))
     : null;
@@ -20,7 +20,7 @@ export async function logOutcome(formData: FormData) {
     : null;
   const notes = (formData.get("notes") as string) || null;
 
-  if (!recId) return { ok: false, error: "no rec_id" };
+  if (!recId) return;
 
   if (action === "took") {
     await supabaseAdmin.from("outcomes").insert({
@@ -44,7 +44,6 @@ export async function logOutcome(formData: FormData) {
       .update({ status: "invalidated" })
       .eq("id", recId);
   } else if (action === "close") {
-    // Close out a previously-taken trade with exit data
     const { data: existing } = await supabaseAdmin
       .from("outcomes")
       .select("*")
@@ -80,19 +79,18 @@ export async function logOutcome(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/scorecard");
-  return { ok: true };
 }
 
 // ============================================================
 // Watchlist CRUD
 // ============================================================
 
-export async function addToWatchlist(formData: FormData) {
+export async function addToWatchlist(formData: FormData): Promise<void> {
   const ticker = String(formData.get("ticker") ?? "")
     .trim()
     .toUpperCase();
   const notes = (formData.get("notes") as string) || null;
-  if (!ticker) return { ok: false, error: "no ticker" };
+  if (!ticker) return;
 
   await supabaseAdmin
     .from("watchlist")
@@ -100,13 +98,12 @@ export async function addToWatchlist(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/watchlist");
-  return { ok: true };
 }
 
-export async function toggleWatchlistActive(formData: FormData) {
+export async function toggleWatchlistActive(formData: FormData): Promise<void> {
   const id = Number(formData.get("id"));
   const active = formData.get("active") === "true";
-  if (!id) return { ok: false };
+  if (!id) return;
 
   await supabaseAdmin
     .from("watchlist")
@@ -115,25 +112,23 @@ export async function toggleWatchlistActive(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/watchlist");
-  return { ok: true };
 }
 
-export async function removeFromWatchlist(formData: FormData) {
+export async function removeFromWatchlist(formData: FormData): Promise<void> {
   const id = Number(formData.get("id"));
-  if (!id) return { ok: false };
+  if (!id) return;
 
   await supabaseAdmin.from("watchlist").delete().eq("id", id);
 
   revalidatePath("/");
   revalidatePath("/watchlist");
-  return { ok: true };
 }
 
 // ============================================================
 // Settings
 // ============================================================
 
-export async function updateSettings(formData: FormData) {
+export async function updateSettings(formData: FormData): Promise<void> {
   const update = {
     account_size_dollars: Number(formData.get("account_size_dollars")) || 1500,
     max_risk_percent: Number(formData.get("max_risk_percent")) || 15,
@@ -149,14 +144,13 @@ export async function updateSettings(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/settings");
-  return { ok: true };
 }
 
 // ============================================================
 // Manual triggers — Run Now + On-demand analyzer
 // ============================================================
 
-export async function triggerRunNow() {
+export async function triggerRunNow(_formData: FormData): Promise<void> {
   const { data: settings } = await supabaseAdmin
     .from("account_settings")
     .select("discord_min_conviction")
@@ -168,32 +162,21 @@ export async function triggerRunNow() {
     | "high"
     | "best_idea";
 
-  const result = await runFullPipeline({
+  await runFullPipeline({
     runType: "midday",
     minConvictionToPost: minConv,
   });
 
   revalidatePath("/");
-  return {
-    ok: result.ok,
-    generated: result.recommendations.length,
-    cost_cents: result.costCents,
-  };
 }
 
-export async function analyzeTickerOnDemand(formData: FormData) {
+export async function analyzeTickerOnDemand(formData: FormData): Promise<void> {
   const ticker = String(formData.get("ticker") ?? "")
     .trim()
     .toUpperCase();
-  if (!ticker) return { ok: false, error: "no ticker" };
+  if (!ticker) return;
 
-  const result = await runAnalyst(ticker);
+  await runAnalyst(ticker);
 
   revalidatePath("/");
-  return {
-    ok: true,
-    kind: result.kind,
-    cost_cents: result.costCents,
-    ...(result.kind === "no_trade" ? { reason: result.reason } : {}),
-  };
 }
