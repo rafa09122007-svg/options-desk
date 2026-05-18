@@ -31,6 +31,11 @@ export type Recommendation = {
   target_price: number | null;
   stop_price: number | null;
 
+  // Position sizing (Phase 2e)
+  position_size_contracts: number | null;
+  max_risk_dollars: number | null;
+  account_size_dollars: number | null;
+
   confidence: number;
   conviction: Conviction;
   score_technical: number | null;

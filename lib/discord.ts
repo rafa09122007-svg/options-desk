@@ -63,6 +63,17 @@ function buildEmbed(rec: Recommendation): Embed {
     },
   ];
 
+  // Risk + position sizing — prominent
+  if (rec.max_risk_dollars != null || rec.position_size_contracts != null) {
+    const contracts = rec.position_size_contracts ?? "?";
+    const risk = rec.max_risk_dollars != null ? `$${Math.round(rec.max_risk_dollars)}` : "?";
+    fields.push({
+      name: "💰 Position",
+      value: `**${contracts}** contract${contracts === 1 ? "" : "s"} · max risk **${risk}**`,
+      inline: false,
+    });
+  }
+
   const strikeText =
     rec.strike != null
       ? rec.strike_short != null

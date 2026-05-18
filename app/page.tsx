@@ -229,6 +229,59 @@ function RecCard({ rec }: { rec: Recommendation }) {
           </div>
         </div>
       </div>
+
+      {/* Risk row — prominent for small-account sizing */}
+      {(rec.max_risk_dollars != null || rec.position_size_contracts != null) && (
+        <div className="mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-l-2 border-gold/40 bg-gold-glow/30 px-4 py-2">
+          <div>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-paper-faint">
+              Risk
+            </span>{" "}
+            <span className="font-display text-2xl tnum text-gold">
+              ${rec.max_risk_dollars != null ? Math.round(rec.max_risk_dollars) : "?"}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-paper-faint">
+              Size
+            </span>{" "}
+            <span className="font-mono text-base tnum text-paper">
+              {rec.position_size_contracts ?? "?"}×
+            </span>
+          </div>
+          {rec.entry_price != null && (
+            <div>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-paper-faint">
+                Entry
+              </span>{" "}
+              <span className="font-mono text-base tnum text-paper">
+                ${rec.entry_price}
+              </span>
+            </div>
+          )}
+          {rec.target_price != null && (
+            <div>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-paper-faint">
+                Target
+              </span>{" "}
+              <span className="font-mono text-base tnum text-bull">
+                ${rec.target_price}
+              </span>
+            </div>
+          )}
+          {rec.stop_price != null && (
+            <div>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-paper-faint">
+                Stop
+              </span>{" "}
+              <span className="font-mono text-base tnum text-bear">
+                ${rec.stop_price}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
       <p className="mt-4 text-sm leading-relaxed text-paper line-clamp-3">
         {rec.thesis}
       </p>
