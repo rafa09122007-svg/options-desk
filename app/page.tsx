@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import type { Recommendation, Watchlist } from "@/lib/types";
+import { SubmitButton } from "@/components/SubmitButton";
 import {
   triggerRunNow,
   analyzeTickerOnDemand,
@@ -7,6 +8,7 @@ import {
 } from "./actions";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300; // 5 min — pipeline can take 1-3 min
 
 export default async function Home() {
   const [{ data: watchlist }, { data: recs }, { data: lastRun }] =
@@ -80,14 +82,14 @@ export default async function Home() {
               Run Now
             </div>
             <p className="mt-1 text-sm text-paper-muted">
-              Trigger the full pipeline immediately. Takes 30s–3min.
+              Trigger the full pipeline immediately. Takes 30s–3min — leave the page open.
             </p>
-            <button
-              type="submit"
+            <SubmitButton
+              pendingText="Desk is working… (1–3 min)"
               className="mt-3 w-full rounded-sm border border-gold/40 bg-gold-glow px-4 py-2 font-medium text-gold transition-colors hover:bg-gold/20"
             >
               Run the desk
-            </button>
+            </SubmitButton>
           </form>
 
           <form action={analyzeTickerOnDemand} className="panel p-4">
@@ -95,7 +97,7 @@ export default async function Home() {
               Analyze a ticker
             </div>
             <p className="mt-1 text-sm text-paper-muted">
-              Force Opus to research and write a thesis on any ticker.
+              Force Opus to research and write a thesis. Takes 30–90s.
             </p>
             <div className="mt-3 flex gap-2">
               <input
@@ -104,12 +106,12 @@ export default async function Home() {
                 required
                 className="flex-1 rounded-sm border border-edge bg-ink px-3 py-2 font-mono text-sm uppercase tracking-wider text-paper placeholder-paper-faint focus:border-gold/40 focus:outline-none"
               />
-              <button
-                type="submit"
+              <SubmitButton
+                pendingText="Analyzing…"
                 className="rounded-sm border border-edge bg-ink-elevated px-4 py-2 text-sm font-medium text-paper transition-colors hover:border-gold/40"
               >
                 Analyze
-              </button>
+              </SubmitButton>
             </div>
           </form>
         </section>
