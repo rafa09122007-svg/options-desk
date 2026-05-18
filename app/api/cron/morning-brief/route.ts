@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const result = await runFullPipeline({
     runType: "morning_brief",
-    minConvictionToPost: "high",
+    minConvictionToPost: "medium",
   });
 
   return NextResponse.json(
