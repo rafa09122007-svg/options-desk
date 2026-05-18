@@ -36,6 +36,14 @@ export type Recommendation = {
   max_risk_dollars: number | null;
   account_size_dollars: number | null;
 
+  // Phase 3: trigger watcher + PINE + earnings
+  entry_trigger_price: number | null;
+  entry_trigger_direction: "above" | "below" | "at" | null;
+  entry_trigger_time: string | null;
+  trigger_fired_at: string | null;
+  pine_script: string | null;
+  earnings_date: string | null;
+
   confidence: number;
   conviction: Conviction;
   score_technical: number | null;

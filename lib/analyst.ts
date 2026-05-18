@@ -1,6 +1,7 @@
 import { anthropic, MODELS } from "./anthropic";
 import { calcCostCents } from "./cost";
 import { extractJson } from "./json";
+import { generatePineScript } from "./pine";
 import { getAccountSettings, maxRiskPerTrade } from "./settings";
 import { supabaseAdmin } from "./supabase";
 import type { Conviction, Direction, Recommendation } from "./types";
@@ -164,6 +165,10 @@ For a trade:
   "stop_price": <max loss / stop on the option>,
   "position_size_contracts": <integer>,
   "max_risk_dollars": <number — worst case loss>,
+  "entry_trigger_price": <price level the UNDERLYING must hit/cross to enter; this is the price of the STOCK, not the option>,
+  "entry_trigger_direction": "above" | "below" | "at",
+  "entry_trigger_time": "<free-form time window, e.g. 'after 10:00 ET' or 'after Powell remarks 2:30 ET' or 'on the open'>",
+  "earnings_date": "YYYY-MM-DD or null if no earnings in the next 30 days",
   "confidence": 0-100,
   "conviction": "low" | "medium" | "high" | "best_idea",
   "score_technical": 0-100,
@@ -171,7 +176,7 @@ For a trade:
   "score_options_pricing": 0-100,
   "score_event_risk": 0-100,
   "score_risk_reward": 0-100,
-  "thesis": "3-5 sentences. Direct, no fluff. Mention the position size and dollar risk explicitly.",
+  "thesis": "3-5 sentences. Direct, no fluff. Mention the position size and dollar risk explicitly. Cite the specific technical setup from the playbook.",
   "catalyst": "One sentence: what specifically drives this.",
   "invalidation": "One sentence: what makes you exit / be wrong."
 }
@@ -302,6 +307,12 @@ Do your research and return a JSON recommendation. Remember: account is $${setti
     max_risk_dollars: maxRiskRaw,
     account_size_dollars: settings.account_size_dollars,
 
+    // Phase 3 fields
+    entry_trigger_price: numOrNull(parsed.entry_trigger_price),
+    entry_trigger_direction: (parsed.entry_trigger_direction as string) ?? null,
+    entry_trigger_time: (parsed.entry_trigger_time as string) ?? null,
+    earnings_date: (parsed.earnings_date as string) ?? null,
+
     confidence: clampInt(parsed.confidence, 0, 100),
     conviction,
     score_technical: numOrNull(parsed.score_technical),
@@ -329,7 +340,16 @@ Do your research and return a JSON recommendation. Remember: account is $${setti
     return { kind: "no_trade", reason: `DB insert failed: ${insErr?.message}`, costCents };
   }
 
-  return { kind: "trade", recommendation: saved as Recommendation, costCents };
+  // Generate and attach PINE script (requires the saved row for full context)
+  const recFull = saved as Recommendation;
+  const pineScript = generatePineScript(recFull);
+  await supabaseAdmin
+    .from("recommendations")
+    .update({ pine_script: pineScript })
+    .eq("id", recFull.id);
+  recFull.pine_script = pineScript;
+
+  return { kind: "trade", recommendation: recFull, costCents };
 }
 
 function numOrNull(v: unknown): number | null {

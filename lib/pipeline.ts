@@ -1,6 +1,7 @@
 import { postRecsToDiscord, type PostResult } from "./discord";
 import { runAnalyst } from "./analyst";
 import { runScreener, type ScreenerFlag } from "./screener";
+import { getAccountSettings } from "./settings";
 import { supabaseAdmin } from "./supabase";
 import type { Conviction, Recommendation, RunType } from "./types";
 
@@ -60,11 +61,29 @@ export async function runFullPipeline(opts: {
   }
 
   try {
+    // Load account settings (for forced tickers like daily SPY 0DTE)
+    const settings = await getAccountSettings();
+
     // 1) Screen
     const screened = await runScreener();
     let costCents = screened.costCents;
 
-    // No flags — quiet day
+    // 1b) FORCE-INCLUDE SPY if 0DTE is enabled — guarantees a daily same-day eval
+    //     even when the screener doesn't flag it.
+    if (
+      settings.enable_0dte_spy &&
+      !screened.flagged.some((f) => f.ticker.toUpperCase() === "SPY")
+    ) {
+      screened.flagged.unshift({
+        ticker: "SPY",
+        interest_score: 55,
+        direction_hint: "neutral",
+        reason:
+          "Daily 0DTE evaluation required — analyze intraday structure for ORB/VWAP/key-level setups regardless of screener output",
+      });
+    }
+
+    // No flags AND SPY force-include didn't apply — quiet day
     if (screened.flagged.length === 0) {
       await supabaseAdmin
         .from("daily_runs")
